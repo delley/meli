@@ -79,7 +79,7 @@ func countDna(isSimian bool) (int64, error) {
 
 	svc := dynamodb.New(cfg)
 
-	filt := expression.Name("IsSimiaM").Equal(expression.Value(isSimian))
+	filt := expression.Name("IsSimian").Equal(expression.Value(isSimian))
 
 	proj := expression.NamesList(expression.Name("ID"))
 
