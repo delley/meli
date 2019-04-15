@@ -96,13 +96,11 @@ func process(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	if isSimian {
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusOK,
-			Body:       http.StatusText(http.StatusOK),
 		}, nil
 	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusForbidden,
-		Body:       http.StatusText(http.StatusForbidden),
 	}, nil
 }
 
