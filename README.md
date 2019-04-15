@@ -25,7 +25,7 @@ A API pode ser testada por meio do seguintes comandos:
 
 ```bash
 # Esperasse que o resultado seja um HTTP 200 - OK
-$ curl -d '{"dna": ["CTGATA", "CTATGC", "CATTGT", "CCAGGG", "CCCATA", "TCACTG"]}' https://9n01fkyuc3.execute-api.us-east-1.amazonaws.com/staging/simian
+$ curl -i -d '{"dna": ["CTGATA", "CTATGC", "CATTGT", "CCAGGG", "CCCATA", "TCACTG"]}' https://9n01fkyuc3.execute-api.us-east-1.amazonaws.com/staging/simian
 ```
 
 ```bash
