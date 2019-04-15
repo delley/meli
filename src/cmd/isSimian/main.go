@@ -2,14 +2,18 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
 
+	"github.com/delley/meli/common"
+
+	"github.com/delley/meli/db"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
 	"github.com/delley/meli/domain"
@@ -24,36 +28,23 @@ func process(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	var c chain
 	err := json.Unmarshal([]byte(request.Body), &c)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       "Invalid payload",
-		}, nil
+		return common.BuildClientError(http.StatusBadRequest, fmt.Errorf("Invalid payload: %s", err.Error()))
 	}
 
 	isSimian, err := domain.IsSimian(c.Dna)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-		}, nil
+		return common.BuildClientError(http.StatusBadRequest, err)
 	}
 
 	c.IsSimian = isSimian
 
 	id := buildID(c.Dna)
 
-	// ==========================================
-	// mover esse trecho para o pkg db para evitar duplicacao de codigo
-	//
-	cfg, err := external.LoadDefaultAWSConfig()
+	svc, err := db.GetService()
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       "Error while retrieving AWS credentials",
-		}, nil
+		return common.BuildServerError(err)
 	}
 
-	svc := dynamodb.New(cfg)
 	rget := svc.GetItemRequest(&dynamodb.GetItemInput{
 		TableName: aws.String(os.Getenv("TABLE_NAME")),
 		Key: map[string]dynamodb.AttributeValue{
@@ -65,10 +56,7 @@ func process(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	res, err := rget.Send()
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       "Error while fetching movie from DynamoDB",
-		}, nil
+		return common.BuildServerError(fmt.Errorf("Error while fetching movie from DynamoDB: %s", err.Error()))
 	}
 
 	if len(res.Item) == 0 {
@@ -86,10 +74,7 @@ func process(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 		_, err = rput.Send()
 		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: http.StatusInternalServerError,
-				Body:       "Error while inserting DNA to DB",
-			}, nil
+			return common.BuildServerError(fmt.Errorf("Error while inserting DNA to DB: %s", err.Error()))
 		}
 	}
 

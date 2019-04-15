@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
+
+	"github.com/delley/meli/common"
+	"github.com/delley/meli/db"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/expression"
 )
@@ -24,18 +25,12 @@ type Stats struct {
 func stats(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	countMutantDna, err := countDna(true)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       err.Error(),
-		}, nil
+		return common.BuildServerError(err)
 	}
 
 	countHumanDna, err := countDna(false)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       err.Error(),
-		}, nil
+		return common.BuildServerError(err)
 	}
 
 	ratio := 0.0
@@ -52,10 +47,7 @@ func stats(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 
 	response, err := json.Marshal(s)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       fmt.Sprintf("Error while decoding to string value: %s", err.Error()),
-		}, nil
+		return common.BuildServerError(fmt.Errorf("Error while decoding to string value: %s", err.Error()))
 	}
 
 	return events.APIGatewayProxyResponse{
@@ -69,15 +61,10 @@ func stats(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 }
 
 func countDna(isSimian bool) (int64, error) {
-	// ==========================================
-	// mover esse trecho para o pkg db para evitar duplicacao de codigo
-	//
-	cfg, err := external.LoadDefaultAWSConfig()
+	svc, err := db.GetService()
 	if err != nil {
-		return 0, fmt.Errorf("Error while retrieving AWS credentials: %s", err.Error())
+		return 0, err
 	}
-
-	svc := dynamodb.New(cfg)
 
 	filt := expression.Name("IsSimian").Equal(expression.Value(isSimian))
 
@@ -89,7 +76,6 @@ func countDna(isSimian bool) (int64, error) {
 		return 0, fmt.Errorf("Got error building expression: %s", err.Error())
 	}
 
-	// Build the query input parameters
 	params := &dynamodb.ScanInput{
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
@@ -98,7 +84,6 @@ func countDna(isSimian bool) (int64, error) {
 		TableName:                 aws.String(os.Getenv("TABLE_NAME")),
 	}
 
-	// Make the DynamoDB Query API call
 	req := svc.ScanRequest(params)
 	res, err := req.Send()
 	if err != nil {
