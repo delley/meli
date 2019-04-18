@@ -24,17 +24,17 @@ A API pode ser testada por meio do seguintes comandos:
 - Endpoint `simian`
 
 ```bash
-# Esperasse que o resultado seja um HTTP 200 - OK
+# Esperá-se que o resultado seja um HTTP 200 - OK
 $ curl -i -d '{"dna": ["CTGATA", "CTATGC", "CATTGT", "CCAGGG", "CCCATA", "TCACTG"]}' https://9n01fkyuc3.execute-api.us-east-1.amazonaws.com/staging/simian
 ```
 
 ```bash
-# Esperasse que o resultado seja um HTTP 403 - Forbidden
+# Esperá-se que o resultado seja um HTTP 403 - Forbidden
 $ curl -i -d '{"dna": ["ATGCGA", "CAGTGC", "TTATTT", "AGACGG", "GCGTCA", "TCACTG"]}' https://9n01fkyuc3.execute-api.us-east-1.amazonaws.com/staging/simian
 ```
 
 ```bash
-# Esperasse que o resultado seja um HTTP 400 - Bad Request
+# Esperá-se que o resultado seja um HTTP 400 - Bad Request
 $ curl -i -d '{"dna": ["CTGATA", "CTATGC", "CATTGT", "CCAGGG", "CCCATA", "TCACTK"]}' https://9n01fkyuc3.execute-api.us-east-1.amazonaws.com/staging/simian
 ```
 
